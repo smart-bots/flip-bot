@@ -10,12 +10,12 @@ Servo SERVO;
 #define servoPin 9
 #define buttonPin 2
 const uint64_t addr = 0x0a0c0a0c0aLL;
-const char on[] = "abcabcabc11";
-const char off[] = "abcabcabc10";
-const char oned[] = "abcabcabc110";
-const char offed[] = "abcabcabc100";
-const char onedHard[] = "abcabcabc111";
-const char offedHard[] = "abcabcabc101";
+const char on[] = "abcabcabc01";
+const char off[] = "abcabcabc00";
+const char oned[] = "abcabcabc010";
+const char offed[] = "abcabcabc000";
+const char onedHard[] = "abcabcabc011";
+const char offedHard[] = "abcabcabc001";
 char down[12],up[12];
 const int onPos = 0,offPos = 100;
 int tus,buzzerVal,pos,tagPos,serSpeed = 15;
