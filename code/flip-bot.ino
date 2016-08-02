@@ -31,12 +31,17 @@ unsigned long time1,time2;
 
 bool timeToSleep = false;
 
-struct smartbots {
+struct recei {
   char token[11];
   boolean state;
-};
+} recei;
 
-smartbots trans,recei;
+struct trans {
+  byte type;
+  char token[11];
+  boolean state;
+  float data;
+} trans;
 
 //----------------------------------------------------------------------------------------
 
@@ -83,8 +88,10 @@ void turn_bot(bool xState) {
 
 void send_msg(bool xState, bool type) {
 
+  trans.type = 1;
   strncpy(trans.token,token,10);
   trans.state = xState;
+  trans.data = 0;
 
   if (type) {
     radio.stopListening();
@@ -179,8 +186,8 @@ void setup()
 //  SERVO.detach();
 
   radio.begin();
-  printf_begin();
-  // radio.printDetails();
+//  printf_begin();
+//  radio.printDetails();
   radio.setAutoAck(true);
   radio.enableAckPayload();
   radio.enableDynamicPayloads();
@@ -243,7 +250,7 @@ void loop() {
     time2 = millis();
   }
   if (timeToSleep) {
-    delay(100);
+    delay(200);
     go_to_sleep();
   }
 }
