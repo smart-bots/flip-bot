@@ -31,22 +31,24 @@ unsigned long time1,time2;
 
 bool timeToSleep = false;
 
+// state: 1 - 2 : off - on
 struct recei {
+  byte type;
   char token[11];
-  boolean state;
+  short state;
 } recei;
 
 struct trans {
   byte type;
   char token[11];
-  boolean state;
+  short state;
   float data;
 } trans;
 
 //----------------------------------------------------------------------------------------
 
 void go_to_sleep() {
-  Serial.println("Sleeping...");
+//  Serial.println("Sleeping...");
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);
   sleep_enable();
   sleep_cpu();
@@ -55,7 +57,7 @@ void go_to_sleep() {
 
 //----------------------------------------------------------------------------------------
 
-void turn_bot(bool xState) {
+void handle_bot(short xState, byte type) {
   if (xState != state) {
 
     read_ser_pos();
@@ -63,10 +65,10 @@ void turn_bot(bool xState) {
     state = xState;
     
     if (state) {
-      Serial.println("ON");
+//      Serial.println("ON");
       serTarPos = onPos;
     } else {
-      Serial.println("OFF");
+//      Serial.println("OFF");
       serTarPos = offPos;
     }
     
@@ -76,40 +78,35 @@ void turn_bot(bool xState) {
 
     timeToSleep = false;
   } else {
-    if (state) {
-      Serial.println("Already ON");
-    } else {
-      Serial.println("Already OFF");
-    }
+//    if (state) {
+//      Serial.println("Already ON");
+//    } else {
+//      Serial.println("Already OFF");
+//    }
   }
-}
-
-//----------------------------------------------------------------------------------------
-
-void send_msg(bool xState, bool type) {
-
-  trans.type = 1;
+  
+  if (type == 1) {
+    trans.type = 3;
+    
+  } else {
+    trans.type = 1;
+  }
   strncpy(trans.token,token,10);
   trans.state = xState;
   trans.data = 0;
 
-  if (type) {
-    radio.stopListening();
-    radio.write(&trans,sizeof(trans)); // Check Ack? Send till success?
-    radio.startListening();
-  } else {
-    radio.writeAckPayload(1,&trans,sizeof(trans));
-  }
+//  Serial.println("Sent: ");
+//  Serial.println(trans.type);
+//  Serial.println(trans.token);
+//  Serial.println(trans.state);
+//  Serial.println(trans.data);
 
-  Serial.println("Msg sent!");
-}
+  radio.stopListening();
+  radio.write(&trans,sizeof(trans));
+  radio.startListening();
 
-//----------------------------------------------------------------------------------------
-
-void handle_bot(bool xState, bool type) {
-  turn_bot(xState);
-  send_msg(xState,type);
-  Serial.println("Handled bot!");
+//  Serial.println("Msg sent!");
+//  Serial.println("Handled bot!");
 }
 
 //----------------------------------------------------------------------------------------
@@ -123,10 +120,11 @@ void check_radio(void) {
 
     radio.read(&recei,sizeof(recei));
 
-    Serial.println("Got: ");
+    Serial.println("Got -----------------");
+    Serial.println(recei.type);
     Serial.println(recei.token);
     Serial.println(recei.state);
-    Serial.println("END");
+    Serial.println("---------------------");
  
     if (strcmp(recei.token,token) == 0) {
       handle_bot(recei.state,0);
@@ -139,10 +137,14 @@ void check_radio(void) {
 void toggle_bot() {
   static unsigned long last_interrupt_time = 0;
   unsigned long interrupt_time = millis();
-  if (interrupt_time - last_interrupt_time >= 100) 
+  if (interrupt_time - last_interrupt_time >= 200) 
   {
-    Serial.println("Btn pushed!");
-    handle_bot(!state,1);
+//    Serial.println("Btn pushed!");
+    if (state == 1) {
+      handle_bot(0,1);
+    } else if (state == 0) {
+      handle_bot(1,1);
+    }
     last_interrupt_time = interrupt_time;
   }
 }
@@ -156,17 +158,17 @@ void read_state() {
     EEPROM.update(1,1);
   }
   state = EEPROM.read(1);
-  Serial.print("Read state: ");
-  Serial.println(state);
+//  Serial.print("Read state: ");
+//  Serial.println(state);
 }
 
 void read_ser_pos() {
   onPos = map(analogRead(onPosPin),0,1022,0,180);
   offPos = map(analogRead(offPosPin),0,1022,0,180);
-  Serial.print("Read servo pos: ");
-  Serial.print(onPos);
-  Serial.print(" ");
-  Serial.println(offPos);
+//  Serial.print("Read servo pos: ");
+//  Serial.print(onPos);
+//  Serial.print(" ");
+//  Serial.println(offPos);
 }
 
 void setup()
@@ -182,8 +184,8 @@ void setup()
     SERVO.write(offPos);
   }
   
-//  SERVO.attach(servoPin);
-//  SERVO.detach();
+  SERVO.attach(servoPin);
+  SERVO.detach();
 
   radio.begin();
 //  printf_begin();
@@ -191,7 +193,6 @@ void setup()
   radio.setAutoAck(true);
   radio.enableAckPayload();
   radio.enableDynamicPayloads();
-  radio.setRetries(15,15);
   radio.openReadingPipe(1,pipes[0]);
   radio.openWritingPipe(pipes[1]);
   radio.startListening();
@@ -230,7 +231,7 @@ void handle_buzzer() {
   {
     analogWrite(buzzerPin, 255);
     buzzerVal = 0;
-    Serial.println("BEEP");
+//    Serial.println("BEEP");
   } else {
     analogWrite(buzzerPin, 0);
   }
@@ -254,4 +255,3 @@ void loop() {
     go_to_sleep();
   }
 }
-
